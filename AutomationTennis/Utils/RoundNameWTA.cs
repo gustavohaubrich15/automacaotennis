@@ -7,6 +7,8 @@
             { "f", "Final" },
             { "s", "Semifinal" },
             { "q", "Quartas de final" },
+            { "5", "Quinta rodada" },
+            { "4", "Quarta rodada" },
             { "3", "Terceira rodada" },
             { "2", "Segunda rodada" },
             { "1", "Primeira rodada" }
