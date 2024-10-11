@@ -30,4 +30,10 @@ Esta aplicação foi criada para enviar notificações diárias em um canal do *
 - **Tarefas Recorrentes com Hangfire**: Utiliza o **Hangfire** para agendar e gerenciar tarefas recorrentes, garantindo o envio diário das notificações.
 - **Banco de Dados SQLite**: A aplicação utiliza o banco de dados **SQLite** para armazenar as informações necessárias sobre os torneios e partidas.
 
+## Listagem de torneios no canal
+![image](https://github.com/user-attachments/assets/9c0018f1-e1e3-46c1-9c7a-b92170d43a14)
+
+## Listagem de jogos do dia no canal
+![image](https://github.com/user-attachments/assets/8bfca2af-8f72-4fbb-ab67-d5d950b1bbcb)
+
 
