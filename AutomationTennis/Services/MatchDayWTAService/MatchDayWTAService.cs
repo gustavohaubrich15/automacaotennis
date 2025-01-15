@@ -1,4 +1,4 @@
-﻿using AutomationTennis.BlockKitSlack;
+using AutomationTennis.BlockKitSlack;
 using AutomationTennis.Domain;
 using AutomationTennis.Response;
 using AutomationTennis.Services.GenericApiService;
@@ -45,15 +45,36 @@ namespace AutomationTennis.Services.MatchDayWTAService
                                              .ToList();
                 foreach (var tournament in tournamentList)
                 {
-                    var formatMessage = await GenerateSlackMessage(tournament);
-                    _logger.LogInformation($"Enviando mensagem para slack sobre partida do dia no canal WTA em {DateTime.Now}");
-                    await _slackService.SendMessageSlackForChannelWTAAsync(formatMessage);
-                    _logger.LogInformation($"Mensagem enviada com sucesso sobre partida do dia  para slack no canal WTA em {DateTime.Now}");
-                }
+                    var listMatches = new List<Match>();
+                    var responseMatchDayWTA = await GetMatchDayTournamentWTAFromGenericApi(tournament.TournamentGroupWTA.IdTournamentGroupWTAIntegration);
+					if(responseMatchDayWTA != null && responseMatchDayWTA.Matches.Count() > 0)
+                    {
+                        listMatches = responseMatchDayWTA.Matches;
+                    }
+					var matchChunks = SplitMatchesInChunks(listMatches, 10);
+
+					foreach (var chunk in matchChunks)
+					{
+					    var formatMessage = await GenerateSlackMessage(tournament, chunk);
+						_logger.LogInformation($"Enviando mensagem para slack sobre partidas do dia no canal WTA em {DateTime.Now}");
+						await _slackService.SendMessageSlackForChannelWTAAsync(formatMessage);
+						_logger.LogInformation($"Mensagem enviada com sucesso sobre partidas do dia para slack no canal WTA em {DateTime.Now}");
+					}
+				}
             }
         }
 
-        private async Task<object> GenerateSlackMessage(TournamentWTA tournament)
+		private List<List<Match>> SplitMatchesInChunks(List<Match> matches, int chunkSize)
+		{
+			var matchChunks = new List<List<Match>>();
+			for (int i = 0; i < matches.Count; i += chunkSize)
+			{
+				matchChunks.Add(matches.Skip(i).Take(chunkSize).ToList());
+			}
+			return matchChunks;
+		}
+
+		private async Task<object> GenerateSlackMessage(TournamentWTA tournament, List<Match> matches)
         {
             var blockKit = new BlockKit();
             var headerBlock = new HeaderBlock
@@ -65,41 +86,82 @@ namespace AutomationTennis.Services.MatchDayWTAService
             };
             blockKit.Blocks.Add(headerBlock);
 
-            var responseMatchDayWTA = await GetMatchDayTournamentWTAFromGenericApi(tournament.TournamentGroupWTA.IdTournamentGroupWTAIntegration);
-            if (responseMatchDayWTA != null)
+            if (matches.Count() > 0)
             {
-                foreach (var match in responseMatchDayWTA.Matches)
+                foreach (var match in matches)
                 {
+                    if(match.SportEvent == null || match.SportEvent.Competitors.Count == 0)
+                    {
+                        continue;
+                    }
                     var contextBlock = new ContextBlock();
                     var dividerBlock = new DividerBlock();
                     blockKit.Blocks.Add(dividerBlock);
-                    if (!string.IsNullOrEmpty(match.CourtName))
+                    if (!string.IsNullOrEmpty(match.SportEvent.Venue.Name))
                     {
-                        contextBlock.Elements.Add(new MrkdwnText { Text = $"*Quadra* - {match.CourtName}" });
+                        contextBlock.Elements.Add(new MrkdwnText { Text = $"*Quadra* - {match.SportEvent.Venue.Name}" });
                     }
 
-                    var roundName = RoundNameWTA.GetRoundName(match.DrawLevelType, match.RoundID.ToString() ?? string.Empty);
+                    var roundName = match.SportEvent.SportEventContext.Round.Name;
 
                     if (!string.IsNullOrEmpty(roundName))
                     {
                         contextBlock.Elements.Add(new MrkdwnText { Text = $"*{roundName}*" });
                     }
 
-                    var resultScore = (!string.IsNullOrEmpty(match.ScoreSet1A) && !string.IsNullOrEmpty(match.ScoreSet1B)) ? $"*Resultado:* {match.ScoreSet1A}-{match.ScoreSet1B}" + (!string.IsNullOrEmpty(match.ScoreSet2A) && !string.IsNullOrEmpty(match.ScoreSet2B)
-                                       ? $", {match.ScoreSet2A}-{match.ScoreSet2B}" + (!string.IsNullOrEmpty(match.ScoreSet3A) && !string.IsNullOrEmpty(match.ScoreSet3B) ? $", {match.ScoreSet3A}-{match.ScoreSet3B}": string.Empty): string.Empty)
-                                       : "Partida a ser realizada";
-                    if (match.DrawMatchType == "S")
+					var resultScore = "Partida a ser realizada";
+
+					if (match.SportEventStatus.PeriodScore != null && match.SportEventStatus.PeriodScore.Any())
+					{
+						var periodScores = match.SportEventStatus.PeriodScore;
+						resultScore = "*Resultado:* " + string.Join(", ", periodScores.Select(ps =>
+						{
+							var score = $"{ps.HomeScore}-{ps.AwayScore}";
+							if (ps.Type == "set" && ps.HomeTiebreakScore.HasValue && ps.AwayTiebreakScore.HasValue)
+							{
+								score += $" (tiebreak: {ps.HomeTiebreakScore}-{ps.AwayTiebreakScore})";
+							}
+							return score;
+						}));
+					}
+
+                    if(match.SportEvent.Competitors.Count() != 2)
                     {
-                        contextBlock.Elements.Add(new MrkdwnText { Text = $"{CountryFlagSlack(match.PlayerCountryA)} {match.PlayerNameFirstA} {match.PlayerNameLastA} *vs* {CountryFlagSlack(match.PlayerCountryB)} {match.PlayerNameFirstB} {match.PlayerNameLastB}" });
+                        continue;
                     }
-                    else
-                    {
-                        contextBlock.Elements.Add(new MrkdwnText { Text = $"{CountryFlagSlack(match.PlayerCountryA)} {match.PlayerNameFirstA.Substring(0, 1)}.{match.PlayerNameLastA}/ {CountryFlagSlack(match.PlayerCountryA2)} {match.PlayerNameFirstA2.Substring(0, 1)}.{match.PlayerNameLastA2} *vs* {CountryFlagSlack(match.PlayerCountryB)} {match.PlayerNameFirstB.Substring(0, 1)}.{match.PlayerNameLastB}/ {CountryFlagSlack(match.PlayerCountryB2)} {match.PlayerNameFirstB2.Substring(0, 1)}.{match.PlayerNameLastB2}" });
-                    }
-                    contextBlock.Elements.Add(new MrkdwnText { Text = $"{resultScore}" });
-                    blockKit.Blocks.Add(contextBlock);
-                }
-            }
+
+					if (match.SportEvent.SportEventContext.Competition.Type == "singles" )
+					{
+                        var playerA = match.SportEvent.Competitors[0];
+
+                        var playerB = match.SportEvent.Competitors[1];
+
+						contextBlock.Elements.Add(new MrkdwnText
+						{
+							Text = $"{CountryFlagSlack(playerA.CountryCode)} {playerA.Name} *vs* {CountryFlagSlack(playerB.CountryCode)} {playerB.Name}"
+						});
+					}
+					else if (match.SportEvent.Competitors[0].Players != null && match.SportEvent.Competitors[0].Players?.Count() == 2
+							&& match.SportEvent.Competitors[1].Players != null && match.SportEvent.Competitors[1].Players?.Count() == 2 )
+					{
+                        var playerA1 = match.SportEvent.Competitors[0].Players?[0];
+                        var playerA2 = match.SportEvent.Competitors[0].Players?[1];
+						var playerB1 = match.SportEvent.Competitors[1].Players?[0];
+						var playerB2 = match.SportEvent.Competitors[1].Players?[1];
+
+						contextBlock.Elements.Add(new MrkdwnText
+						{
+							Text = $"{CountryFlagSlack(playerA1.CountryCode)} {playerA1.Name} / {CountryFlagSlack(playerA2.CountryCode)}{playerA2.Name} *vs* {CountryFlagSlack(playerB1.CountryCode)} {playerB1.Name} / {CountryFlagSlack(playerB2.CountryCode)} {playerB2.Name}"
+						});
+					}
+
+
+					// Adiciona a pontuação ao bloco
+					contextBlock.Elements.Add(new MrkdwnText { Text = resultScore });
+					blockKit.Blocks.Add(contextBlock);
+
+				}
+			}
             else
             {
                 var contextBlock = new ContextBlock();
@@ -129,7 +191,11 @@ namespace AutomationTennis.Services.MatchDayWTAService
 
         private string CountryFlagSlack(string playerCountry)
         {
-            var playerCountryLower = CountryNameAdjuster.AdjustCountryName(playerCountry);
+			if (string.IsNullOrWhiteSpace(playerCountry))
+			{
+				return "";
+			}
+			var playerCountryLower = CountryNameAdjuster.AdjustCountryName(playerCountry);
             return $":flag-{playerCountryLower.Substring(0, 2)}:";
         }
 
