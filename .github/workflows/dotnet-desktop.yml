@@ -1,44 +1,38 @@
-name: Publish 🚀
+name: Run SendMatchList 🟢
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-    - master
-
-env:
-  AZURE_WEBAPP_NAME: automation-tennis-services
-  AZURE_WEBAPP_PACKAGE_PATH: "./publish"
 
 jobs:
-  publish:
+  run:
     runs-on: windows-latest
-    
+
+    env:
+      DOTNET_VERSION: '8.0.x'
+      PROJECT_PATH: './AutomationTennis/AutomationTennis.csproj'
+      PUBLISH_DIR: './publish'
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: '8.0.x'
-          
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
       - name: Restore
-        run: dotnet restore ./AutomationTennis.sln
-        
+        run: dotnet restore ${{ env.PROJECT_PATH }}
+
       - name: Build
-        run: dotnet build ./AutomationTennis.sln --configuration Release --no-restore
-        
+        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
+
       - name: Publish
-        run: dotnet publish ./AutomationTennis.sln --configuration Release --no-build --output '${{ env.AZURE_WEBAPP_PACKAGE_PATH }}'
+        run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ${{ env.PUBLISH_DIR }}
 
       - name: Update Slack Configuration
         run: |
-          echo "Updating Slack configuration"
-          sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "${{ secrets.SLACK_WEBHOOK_URL }}"|g' ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/appsettings.json
+          echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
+          sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "${{ secrets.SLACK_WEBHOOK_URL }}"|g' ${{ env.PUBLISH_DIR }}/appsettings.json
 
-      - name: Deployment
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          package: "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}"
+      - name: Run Method SendMatchListOfDayToSlackChannelWTA
+        run: dotnet ${{ env.PUBLISH_DIR }}/AutomationTennis.dll SendMatchListOfDayToSlackChannelWTA
