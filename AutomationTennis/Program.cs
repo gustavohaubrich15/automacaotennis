@@ -45,6 +45,21 @@ builder.Services.AddScoped<ITournamentWTARepository, TournamentWTARepository>();
 
 
 var app = builder.Build();
+
+if (args.Contains("run-api-service-github-actions"))
+{
+    using var scope = app.Services.CreateScope();
+    if(DateTime.Now.Day == 24)
+    {
+        var tournamentWTAService = scope.ServiceProvider.GetRequiredService<ITournamentWTAService>();
+        await tournamentWTAService.AddListTournamentOfMonthWTAFromGenericApi();
+        await tournamentWTAService.SendTournamentListOfMonthToSlackChannelWTA();
+    }
+    var matchDayWTAService = scope.ServiceProvider.GetRequiredService<IMatchDayWTAService>();
+    await matchDayWTAService.SendMatchListOfDayToSlackChannelWTA();
+    return;
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseHangfireDashboard("/hangfire");
