@@ -1,6 +1,5 @@
 name: Publicar Projeto e Rodar Serviço 🚀
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
