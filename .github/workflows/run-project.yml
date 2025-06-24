@@ -1,13 +1,13 @@
-name: Publish Project and Commit 🚀
+name: Publicar Project e Rodar Serviço 🚀
 
 on:
   workflow_dispatch:
   push:
     branches:
-      - master  # ajuste conforme sua branch
+      - main
 
 jobs:
-  publish-and-commit:
+  publish-and-run:
     runs-on: ubuntu-latest
 
     env:
@@ -19,34 +19,27 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          persist-credentials: true
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Restore dependencies
+      - name: Restaurar dependencias
         run: dotnet restore ${{ env.PROJECT_PATH }}
 
-      - name: Build project
+      - name: Buildar projeto
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
 
-      - name: Publish project
+      - name: Publicar projeto
         run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ${{ env.PUBLISH_DIR }}
 
-      - name: Update Slack Webhook URL in appsettings.json
+      - name: Atualizar Slack Webhook URL no appsettings.json
         run: |
           echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
           sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "'"${SLACK_WEBHOOK_URL}"'"|g' ${{ env.PUBLISH_DIR }}/appsettings.json
 
-      - name: Configure Git user
+      - name: Executar serviço diretamente via github actions
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Commit and push published files
-        run: |
-          git add ${{ env.PUBLISH_DIR }}
-          git diff --cached --quiet || (git commit -m "Atualiza publish automático [skip ci]" && git push)
+          echo "Executando serviços para envio de mensagem slack com argumento run-api-service-github-actions"
+          dotnet ${{ env.PUBLISH_DIR }}/AutomationTennis.dll run-api-service-github-actions
