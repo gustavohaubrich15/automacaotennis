@@ -32,7 +32,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddHostedService<BackgroundJobService>();
 
 //context
-var dbPath = Path.Combine("Context", "automationTennis.db");
+var dbPath = Path.Combine(AppContext.BaseDirectory,"Context", "automationTennis.db");
 builder.Services.AddDbContext<AutomationTennisContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
