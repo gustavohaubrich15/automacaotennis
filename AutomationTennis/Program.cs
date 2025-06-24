@@ -49,10 +49,10 @@ var app = builder.Build();
 if (args.Contains("run-api-service-github-actions"))
 {
     using var scope = app.Services.CreateScope();
+    var tournamentWTAService = scope.ServiceProvider.GetRequiredService<ITournamentWTAService>();
+    await tournamentWTAService.AddListTournamentOfMonthWTAFromGenericApi();
     if(DateTime.Now.Day == 1)
     {
-        var tournamentWTAService = scope.ServiceProvider.GetRequiredService<ITournamentWTAService>();
-        await tournamentWTAService.AddListTournamentOfMonthWTAFromGenericApi();
         await tournamentWTAService.SendTournamentListOfMonthToSlackChannelWTA();
     }
     var matchDayWTAService = scope.ServiceProvider.GetRequiredService<IMatchDayWTAService>();
