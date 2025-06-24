@@ -38,6 +38,7 @@ namespace AutomationTennis.Services.TournamentWTAService
         {
             AdjustDateApiWta();
             _logger.LogInformation($"Iniciando chamada api de torneios WTA em {DateTime.Now}");
+            _logger.LogInformation($"Url api de torneios WTA em {UrlWtaTournament}");
             var response = await _genericApiService.GetAsync<ResponseApiTournamentWTA>(UrlWtaTournament);
             _logger.LogInformation($"Chamada com sucesso. Resposta da chamada api de torneios WTA : {response}");
             var mappedTournament = MappedResponse(response);
