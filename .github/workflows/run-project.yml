@@ -2,7 +2,7 @@ name: Publicar Projeto e Rodar Serviço 🚀
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *'  
+    - cron: '0 12 * * *'  
 jobs:
   publish-and-run:
     runs-on: ubuntu-latest
