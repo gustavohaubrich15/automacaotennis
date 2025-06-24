@@ -32,6 +32,8 @@ namespace AutomationTennis.Services.TournamentWTAService
             _genericApiService = genericApiService;
             _slackService = slackService;
             _configuration = configuration;
+            var wtaApi = _configuration["WTA:TournamentApi"];
+            _logger.LogInformation($"Valor lido de WTA:TournamentApi no construtor: {wtaApi ?? "null"}");
         }
 
         public async Task AddListTournamentOfMonthWTAFromGenericApi()
