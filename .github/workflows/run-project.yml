@@ -40,9 +40,6 @@ jobs:
       - name: Copiar banco SQLite para a pasta publish
         run: cp AutomationTennis/Context/automationTennis.db ${{ env.PUBLISH_DIR }}/Context/automationTennis.db
 
-      - name: Copiar appsettings.json para publish
-        run: cp appsettings.json ${{ env.PUBLISH_DIR }}/appsettings.json
-
       - name: Atualizar Slack Webhook URL no appsettings.json
         run: |
           echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
