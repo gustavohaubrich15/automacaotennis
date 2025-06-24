@@ -44,6 +44,8 @@ jobs:
         run: |
           echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
           sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "'"${SLACK_WEBHOOK_URL}"'"|g' ${{ env.PUBLISH_DIR }}/appsettings.json
+      - name: Ver conteúdo do appsettings.json publicado
+        run: cat ${{ env.PUBLISH_DIR }}/appsettings.json
           
       - name: Executar serviço diretamente via github actions
         run: |
