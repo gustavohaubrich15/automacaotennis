@@ -30,7 +30,11 @@
     <PackageReference Include="Microsoft.Extensions.Logging.AzureAppServices" Version="8.0.8" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
-
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <ItemGroup>
     <None Update="Context\automationTennis.db">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
