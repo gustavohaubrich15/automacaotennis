@@ -1,4 +1,4 @@
-name: Publicar Project e Rodar Serviço 🚀
+name: Publicar Projeto e Rodar Serviço 🚀
 
 on:
   workflow_dispatch:
@@ -33,6 +33,12 @@ jobs:
 
       - name: Publicar projeto
         run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ${{ env.PUBLISH_DIR }}
+
+      - name: Criar pasta Context no publish (se não existir)
+        run: mkdir -p ${{ env.PUBLISH_DIR }}/Context
+
+      - name: Copiar banco SQLite para a pasta publish
+        run: cp AutomationTennis/Context/automationTennis.db ${{ env.PUBLISH_DIR }}/Context/automationTennis.db
 
       - name: Atualizar Slack Webhook URL no appsettings.json
         run: |
