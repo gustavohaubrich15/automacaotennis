@@ -45,6 +45,9 @@ jobs:
           echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
           sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "'"${SLACK_WEBHOOK_URL}"'"|g' ${{ env.PUBLISH_DIR }}/appsettings.json
 
+      - name: Verificar estrutura da pasta publish
+        run: ls -R ${{ env.PUBLISH_DIR }}
+
       - name: Executar serviço diretamente via github actions
         run: |
           echo "Executando serviços para envio de mensagem slack com argumento run-api-service-github-actions"
