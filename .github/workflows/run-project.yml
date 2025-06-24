@@ -1,8 +1,5 @@
 name: Publicar Projeto e Rodar Serviço 🚀
 on:
-  push:
-    branches:
-      - main
   schedule:
     - cron: '*/5 * * * *'  
 jobs:
