@@ -1,55 +1,42 @@
 name: Publicar Projeto e Rodar Serviço 🚀
-
 on:
-  
   workflow_dispatch:
   push:
     branches:
       - main
   schedule:
-    - cron: '40 13 * * *'  
-
+    - cron: '50 13 * * *'  
 jobs:
   publish-and-run:
     runs-on: ubuntu-latest
-
     env:
       DOTNET_VERSION: '8.0.x'
       PROJECT_PATH: './AutomationTennis/AutomationTennis.csproj'
       PUBLISH_DIR: './publish'
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
       - name: Setup .NET
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
       - name: Restaurar dependencias
         run: dotnet restore ${{ env.PROJECT_PATH }}
-
       - name: Buildar projeto
         run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release --no-restore
-
       - name: Publicar projeto
         run: dotnet publish ${{ env.PROJECT_PATH }} --configuration Release --output ${{ env.PUBLISH_DIR }}
-
       - name: Criar pasta Context no publish (se não existir)
         run: mkdir -p ${{ env.PUBLISH_DIR }}/Context
-
       - name: Copiar banco SQLite para a pasta publish
         run: cp AutomationTennis/Context/automationTennis.db ${{ env.PUBLISH_DIR }}/Context/automationTennis.db
-
       - name: Atualizar Slack Webhook URL no appsettings.json
         run: |
           echo "Atualizando WebhookUrlChannelWTA no appsettings.json"
           sed -i 's|"WebhookUrlChannelWTA": ".*"|"WebhookUrlChannelWTA": "'"${SLACK_WEBHOOK_URL}"'"|g' ${{ env.PUBLISH_DIR }}/appsettings.json
       - name: Ver conteúdo do appsettings.json publicado
         run: cat ${{ env.PUBLISH_DIR }}/appsettings.json
-          
       - name: Executar serviço diretamente via github actions
         run: |
           echo "Executando serviços para envio de mensagem slack com argumento run-api-service-github-actions"
