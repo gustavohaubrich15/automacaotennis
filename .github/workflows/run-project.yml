@@ -1,5 +1,6 @@
 name: Publicar Projeto e Rodar Serviço 🚀
 on:
+  workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'  
 jobs:
